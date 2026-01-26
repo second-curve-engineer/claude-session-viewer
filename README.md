@@ -2,7 +2,7 @@
 
 一个用于浏览和搜索 Claude Code 历史会话的 Web 可视化工具。
 
-![首页截图](docs/home.png)
+![首页截图](docs/home.jpg)
 
 ## 功能特性
 
@@ -111,17 +111,6 @@ claude-session-viewer/
 └── README.md
 ```
 
-## API 接口
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/sessions` | 获取会话列表 |
-| GET | `/api/sessions/{id}` | 获取会话详情 |
-| GET | `/api/search?q=keyword` | 全文搜索 |
-| GET | `/api/projects` | 获取项目列表 |
-| GET | `/api/usage/summary` | Token 用量摘要（今日/本月/总计） |
-| GET | `/api/usage/detail?days=30` | Token 用量详情（按日期/模型统计） |
-
 ## 数据来源
 
 本工具读取 Claude Code 的本地存储数据（只读，不会修改任何数据）：
@@ -160,56 +149,22 @@ claude-session-viewer/
 >
 > 更新日期: 2026-01-26
 
-| 模型 | Input | Output | Cache Write | Cache Read |
-|------|-------|--------|-------------|------------|
-| Opus 4.5 | $5 | $25 | $6.25 | $0.50 |
-| Sonnet 4.5/4 | $3 | $15 | $3.75 | $0.30 |
-| Haiku 3.5 | $0.80 | $4 | $1 | $0.08 |
-
-### 200K 分层定价
-
-Sonnet 模型超过 200K tokens 的部分使用更高价格：
-
-| 模型 | Input (>200K) | Output (>200K) | Cache Write (>200K) | Cache Read (>200K) |
-|------|---------------|----------------|---------------------|-------------------|
-| Sonnet 4.5/4 | $6 | $22.50 | $7.50 | $0.60 |
-
-### 计算公式
-
-```
-总费用 = Σ(每种 token 类型的费用)
-
-单类型费用 =
-  如果 tokens ≤ 200K: tokens × 基础价格
-  如果 tokens > 200K: 200K × 基础价格 + (tokens - 200K) × 分层价格
-```
-
 ## 截图
 
 ### 时间线模式
-![会话列表](docs/home.png)
+![会话列表](docs/home.jpg)
 
 ### 会话详情
-![会话详情](docs/detail.png)
+![会话详情](docs/detail.jpg)
 
 ### 搜索功能
-![搜索功能](docs/search.png)
+![搜索功能](docs/search.jpg)
 
 ### Token 用量统计
-![Token统计](docs/usage.png)
+![Token统计](docs/usage.jpg)
 
 ## 开发计划
 
 - [ ] AI 生成会话摘要
 - [ ] 导出为 Markdown
 - [ ] 会话标签管理
-- [ ] 深色模式
-- [ ] Docker 部署支持
-
-## 相关项目
-
-- [ccusage](https://github.com/ryoppippi/ccusage) - Claude Code Token 用量统计工具
-
-## License
-
-MIT
