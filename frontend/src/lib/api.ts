@@ -106,6 +106,10 @@ export interface UsageDetail {
   }>;
 }
 
+export interface SessionContext {
+  context: string;
+}
+
 /**
  * 获取会话列表
  */
@@ -162,5 +166,14 @@ export async function getUsageSummary(): Promise<UsageSummary> {
 export async function getUsageDetail(days: number = 30): Promise<UsageDetail> {
   const response = await fetch(`${API_BASE}/usage/detail?days=${days}`);
   if (!response.ok) throw new Error('Failed to fetch usage detail');
+  return response.json();
+}
+
+/**
+ * 获取压缩后的会话上下文，用于继续对话
+ */
+export async function getSessionContext(id: string): Promise<SessionContext> {
+  const response = await fetch(`${API_BASE}/sessions/${id}/context`);
+  if (!response.ok) throw new Error('Failed to fetch session context');
   return response.json();
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Folder, Clock, FileText, MessageSquare } from 'lucide-react';
 import { MessageBubble } from '../components/MessageBubble';
+import { CopyContextButton } from '../components/CopyContextButton';
 import { getSession, type SessionDetail } from '../lib/api';
 import { formatDateTime, cn } from '../lib/utils';
 
@@ -90,37 +91,41 @@ export function Session() {
             </div>
           </div>
 
-          {/* 标签页 */}
-          <div className="mt-4 flex gap-4 border-b border-gray-200 -mb-px">
-            <button
-              onClick={() => setActiveTab('messages')}
-              className={cn(
-                "flex items-center gap-1 px-3 py-2 text-sm border-b-2 -mb-px",
-                activeTab === 'messages'
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              )}
-            >
-              <MessageSquare className="w-4 h-4" />
-              对话内容
-            </button>
-            <button
-              onClick={() => setActiveTab('files')}
-              className={cn(
-                "flex items-center gap-1 px-3 py-2 text-sm border-b-2 -mb-px",
-                activeTab === 'files'
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              )}
-            >
-              <FileText className="w-4 h-4" />
-              文件变更
-              {session.file_changes.length > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 bg-gray-100 rounded text-xs">
-                  {session.file_changes.length}
-                </span>
-              )}
-            </button>
+          {/* 标签页 + 复制按钮 */}
+          <div className="mt-4 flex items-center justify-between border-b border-gray-200">
+            <div className="flex gap-4 -mb-px">
+              <button
+                onClick={() => setActiveTab('messages')}
+                className={cn(
+                  "flex items-center gap-1 px-3 py-2 text-sm border-b-2 -mb-px",
+                  activeTab === 'messages'
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                )}
+              >
+                <MessageSquare className="w-4 h-4" />
+                对话内容
+              </button>
+              <button
+                onClick={() => setActiveTab('files')}
+                className={cn(
+                  "flex items-center gap-1 px-3 py-2 text-sm border-b-2 -mb-px",
+                  activeTab === 'files'
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                )}
+              >
+                <FileText className="w-4 h-4" />
+                文件变更
+                {session.file_changes.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-gray-100 rounded text-xs">
+                    {session.file_changes.length}
+                  </span>
+                )}
+              </button>
+            </div>
+            {/* 复制上下文按钮 */}
+            <CopyContextButton sessionId={id!} />
           </div>
         </div>
       </header>

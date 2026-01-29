@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from models import SessionSummary, SessionDetail, SearchResult, Project, UsageSummary, UsageDetail
 from parser import get_all_sessions, get_session_detail, search_sessions, get_all_projects, get_usage_summary, get_usage_detail
+from compressor import compress_session
 
 app = FastAPI(
     title="Claude Session Viewer API",
@@ -50,6 +51,17 @@ def get_session(session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return session
+
+
+@app.get("/api/sessions/{session_id}/context")
+def get_session_context(session_id: str):
+    """获取压缩后的会话上下文，用于继续对话"""
+    session = get_session_detail(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    context = compress_session(messages=session.messages)
+    return {"context": context}
 
 
 @app.get("/api/search", response_model=List[SearchResult])
