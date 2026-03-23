@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Folder, Clock, FileText, MessageSquare } from 'lucide-react';
 import { MessageBubble } from '../components/MessageBubble';
 import { CopyContextButton } from '../components/CopyContextButton';
+import { ResumeButton } from '../components/ResumeButton';
 import { getSession, type SessionDetail } from '../lib/api';
 import { formatDateTime, cn } from '../lib/utils';
 
@@ -124,8 +125,11 @@ export function Session() {
                 )}
               </button>
             </div>
-            {/* 复制上下文按钮 */}
-            <CopyContextButton sessionId={id!} />
+            {/* 操作按钮 */}
+            <div className="flex items-center gap-2">
+              <ResumeButton sessionId={id!} />
+              <CopyContextButton sessionId={id!} />
+            </div>
           </div>
         </div>
       </header>
