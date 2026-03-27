@@ -130,6 +130,8 @@ export function Session() {
               <ResumeButton sessionId={id!} />
               <CopyContextButton sessionId={id!} />
             </div>
+            {/* 复制上下文按钮 */}
+            <CopyContextButton sessionId={id!} />
           </div>
         </div>
       </header>
