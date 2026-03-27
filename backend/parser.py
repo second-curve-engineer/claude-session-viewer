@@ -1,10 +1,7 @@
 """JSONL 解析器 - 解析 Claude Code 会话数据"""
-import json
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Generator
-from dateutil import parser as date_parser
+from typing import List, Optional, Dict, Any
 
 from models import (
     Message, FileChange, SessionSummary, SessionDetail,
@@ -13,6 +10,7 @@ from models import (
 )
 from collections import defaultdict
 from datetime import date, timedelta
+from common import parse_timestamp, parse_jsonl_file
 
 
 # Claude Code 数据目录
@@ -20,13 +18,7 @@ CLAUDE_DIR = Path.home() / ".claude"
 PROJECTS_DIR = CLAUDE_DIR / "projects"
 FILE_HISTORY_DIR = CLAUDE_DIR / "file-history"
 
-
-def parse_timestamp(ts: str) -> datetime:
-    """解析时间戳"""
-    try:
-        return date_parser.parse(ts)
-    except:
-        return datetime.now()
+ 
 
 
 def extract_content(message: dict) -> str:
@@ -84,23 +76,6 @@ def extract_tool_calls(messages: List[dict]) -> List[str]:
                 if isinstance(item, dict) and item.get("type") == "tool_use":
                     tools.add(item.get("name", "unknown"))
     return sorted(list(tools))
-
-
-def parse_jsonl_file(file_path: Path) -> List[dict]:
-    """解析单个 JSONL 文件"""
-    records = []
-    try:
-        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    try:
-                        records.append(json.loads(line))
-                    except json.JSONDecodeError:
-                        continue
-    except Exception as e:
-        print(f"Error parsing {file_path}: {e}")
-    return records
 
 
 def get_project_dirs() -> List[Path]:
@@ -193,7 +168,8 @@ def get_all_sessions() -> List[SessionSummary]:
                 created_at=created_at,
                 updated_at=updated_at,
                 message_count=len(messages),
-                tool_calls=extract_tool_calls(records)
+                tool_calls=extract_tool_calls(records),
+                source="claude"
             ))
 
     # 按更新时间倒序排序
@@ -306,7 +282,8 @@ def get_session_detail(session_id: str) -> Optional[SessionDetail]:
                 created_at=created_at,
                 updated_at=updated_at,
                 messages=messages,
-                file_changes=file_changes
+                file_changes=file_changes,
+                source="claude"
             )
 
     return None
@@ -351,7 +328,8 @@ def search_sessions(query: str, limit: int = 50) -> List[SearchResult]:
                         title=title,
                         timestamp=parse_timestamp(record.get("timestamp", "")),
                         matched_content=matched,
-                        message_type=record.get("type", "unknown")
+                        message_type=record.get("type", "unknown"),
+                        source="claude"
                     ))
 
                     if len(results) >= limit:

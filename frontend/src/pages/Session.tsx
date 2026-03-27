@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Folder, Clock, FileText, MessageSquare } from 'lucide-react';
 import { MessageBubble } from '../components/MessageBubble';
 import { CopyContextButton } from '../components/CopyContextButton';
+import { getSession, type SessionDetail, type SourceFilter } from '../lib/api';
 import { ResumeButton } from '../components/ResumeButton';
 import { getSession, type SessionDetail } from '../lib/api';
 import { formatDateTime, cn } from '../lib/utils';
 
 export function Session() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const source = (searchParams.get('source') as SourceFilter) || 'claude';
   const [session, setSession] = useState<SessionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +25,7 @@ export function Session() {
       setError(null);
 
       try {
-        const data = await getSession(id);
+        const data = await getSession(id, source);
         setSession(data);
       } catch (err) {
         setError('加载会话失败');
@@ -32,7 +35,7 @@ export function Session() {
       }
     }
     load();
-  }, [id]);
+  }, [id, source]);
 
   if (loading) {
     return (
@@ -131,7 +134,7 @@ export function Session() {
               <CopyContextButton sessionId={id!} />
             </div>
             {/* 复制上下文按钮 */}
-            <CopyContextButton sessionId={id!} />
+            <CopyContextButton sessionId={id!} source={source} />
           </div>
         </div>
       </header>

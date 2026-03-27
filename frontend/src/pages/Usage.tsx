@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Activity, Calendar, Cpu } from 'lucide-react';
-import { getUsageDetail, getUsageSummary, type UsageDetail, type UsageSummary } from '../lib/api';
+import { getUsageDetail, getUsageSummary, type UsageDetail, type UsageSummary, type SourceFilter } from '../lib/api';
+import { cn } from '../lib/utils';
+
+const SOURCE_FILTER_KEY = 'claude-session-viewer-source';
 
 function formatTokens(num: number): string {
   if (num >= 1_000_000) {
@@ -35,29 +38,59 @@ function formatModelName(model: string): string {
 }
 
 export function Usage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [summary, setSummary] = useState<UsageSummary | null>(null);
   const [detail, setDetail] = useState<UsageDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);
+  const requestIdRef = useRef(0);
+  const [source, setSource] = useState<SourceFilter>(() => {
+    const param = searchParams.get('source');
+    if (param === 'claude' || param === 'codex' || param === 'gemini') return param;
+    const saved = localStorage.getItem(SOURCE_FILTER_KEY);
+    return (saved === 'claude' || saved === 'codex' || saved === 'gemini') ? saved : 'claude';
+  });
+
+  const handleSourceChange = (next: SourceFilter) => {
+    setSource(next);
+    localStorage.setItem(SOURCE_FILTER_KEY, next);
+    setSearchParams({ source: next });
+  };
+
+  useEffect(() => {
+    const param = searchParams.get('source');
+    if (param === 'claude' || param === 'codex' || param === 'gemini') {
+      if (param !== source) {
+        setSource(param);
+        localStorage.setItem(SOURCE_FILTER_KEY, param);
+      }
+    }
+  }, [searchParams, source]);
 
   useEffect(() => {
     async function load() {
+      const requestId = ++requestIdRef.current;
       setLoading(true);
       try {
         const [summaryData, detailData] = await Promise.all([
-          getUsageSummary(),
-          getUsageDetail(days),
+          getUsageSummary(source),
+          getUsageDetail(days, source),
         ]);
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
         setSummary(summaryData);
         setDetail(detailData);
       } catch (error) {
         console.error('Failed to load usage data:', error);
       } finally {
-        setLoading(false);
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+        }
       }
     }
     load();
-  }, [days]);
+  }, [days, source]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -77,14 +110,66 @@ export function Usage() {
                 Token 使用统计
               </h1>
             </div>
-            <a
-              href="https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-auto text-xs text-gray-400 hover:text-gray-600"
-            >
-              定价来源: LiteLLM (2026-01-26)
-            </a>
+            <div className="flex items-center gap-1 rounded-lg border border-gray-200 p-1 bg-gray-50">
+              <button
+                onClick={() => handleSourceChange('claude')}
+                className={cn(
+                  "px-3 py-1 text-sm rounded",
+                  source === 'claude'
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                Claude
+              </button>
+              <button
+                onClick={() => handleSourceChange('codex')}
+                className={cn(
+                  "px-3 py-1 text-sm rounded",
+                  source === 'codex'
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                Codex
+              </button>
+              <button
+                onClick={() => handleSourceChange('gemini')}
+                className={cn(
+                  "px-3 py-1 text-sm rounded",
+                  source === 'gemini'
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                Gemini
+              </button>
+            </div>
+            {source === 'claude' && (
+              <a
+                href="https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto text-xs text-gray-400 hover:text-gray-600"
+              >
+                定价来源: LiteLLM (2026-01-26)
+              </a>
+            )}
+            {source === 'codex' && (
+              <a
+                href="https://platform.openai.com/docs/pricing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto text-xs text-gray-400 hover:text-gray-600"
+              >
+                定价来源: OpenAI Pricing
+              </a>
+            )}
+            {source === 'gemini' && (
+              <span className="ml-auto text-xs text-gray-400">
+                定价来源: 暂无（仅统计 token）
+              </span>
+            )}
           </div>
         </div>
       </header>

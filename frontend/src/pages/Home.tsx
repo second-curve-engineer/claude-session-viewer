@@ -15,10 +15,12 @@ import {
   type SessionSummary,
   type Project,
   type SearchResult,
+  type SourceFilter,
 } from '../lib/api';
 import { cn, formatDate, getGroupId } from '../lib/utils';
 
 const VIEW_MODE_KEY = 'claude-session-viewer-view-mode';
+const SOURCE_FILTER_KEY = 'claude-session-viewer-source';
 
 export function Home() {
   const navigate = useNavigate();
@@ -28,6 +30,10 @@ export function Home() {
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>(() => {
+    const saved = localStorage.getItem(SOURCE_FILTER_KEY);
+    return (saved === 'claude' || saved === 'codex' || saved === 'gemini') ? saved : 'claude';
+  });
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem(VIEW_MODE_KEY);
     return (saved === 'timeline' || saved === 'project') ? saved : 'project';
@@ -43,6 +49,14 @@ export function Home() {
     if (mode === 'timeline') {
       setSelectedProject(null);
     }
+  }, []);
+
+  const handleSourceChange = useCallback((source: SourceFilter) => {
+    setSourceFilter(source);
+    localStorage.setItem(SOURCE_FILTER_KEY, source);
+    setSelectedProject(null);
+    setSearchResults(null);
+    setSearchQuery('');
   }, []);
 
   // 时间线分组变化回调
@@ -65,8 +79,8 @@ export function Home() {
       setLoading(true);
       try {
         const [sessionsData, projectsData] = await Promise.all([
-          getSessions(selectedProject || undefined),
-          getProjects(),
+          getSessions(selectedProject || undefined, sourceFilter),
+          getProjects(sourceFilter),
         ]);
         setSessions(sessionsData);
         setProjects(projectsData);
@@ -77,7 +91,7 @@ export function Home() {
       }
     }
     load();
-  }, [selectedProject]);
+  }, [selectedProject, sourceFilter]);
 
   // 搜索处理
   const handleSearch = useCallback(async (query: string) => {
@@ -89,14 +103,14 @@ export function Home() {
 
     setLoading(true);
     try {
-      const results = await searchSessions(query);
+      const results = await searchSessions(query, sourceFilter);
       setSearchResults(results);
     } catch (error) {
       console.error('Search failed:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sourceFilter]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -111,11 +125,48 @@ export function Home() {
                 <path d="M16 9V13.5L19 15.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <h1 className="text-xl font-semibold text-gray-900">
-                Claude Code 会话历史
+                {sourceFilter === 'codex' ? 'Codex CLI 会话历史' : (sourceFilter === 'gemini' ? 'Gemini CLI 会话历史' : 'Claude Code 会话历史')}
               </h1>
             </div>
-            <div className="text-sm text-gray-500">
-              共 {sessions.length} 个会话
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 rounded-lg border border-gray-200 p-1 bg-gray-50">
+                <button
+                  onClick={() => handleSourceChange('claude')}
+                  className={cn(
+                    "px-3 py-1 text-sm rounded",
+                    sourceFilter === 'claude'
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  )}
+                >
+                  Claude
+                </button>
+                <button
+                  onClick={() => handleSourceChange('codex')}
+                  className={cn(
+                    "px-3 py-1 text-sm rounded",
+                    sourceFilter === 'codex'
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  )}
+                >
+                  Codex
+                </button>
+                <button
+                  onClick={() => handleSourceChange('gemini')}
+                  className={cn(
+                    "px-3 py-1 text-sm rounded",
+                    sourceFilter === 'gemini'
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  )}
+                >
+                  Gemini
+                </button>
+              </div>
+              <div className="text-sm text-gray-500">
+                共 {sessions.length} 个会话
+              </div>
             </div>
           </div>
 
@@ -134,7 +185,7 @@ export function Home() {
           {/* 侧边栏 - 视图切换 & 项目筛选 */}
           <aside className="w-64 flex-shrink-0 space-y-4 sticky top-28 self-start max-h-[calc(100vh-8rem)] overflow-y-auto">
             {/* Token 统计 */}
-            <UsageStats />
+            <UsageStats source={sourceFilter} />
 
             {/* 视图模式切换 */}
             <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -222,7 +273,7 @@ export function Home() {
                       <div
                         key={`${result.session_id}-${index}`}
                         className="p-4 hover:bg-gray-50 cursor-pointer"
-                        onClick={() => navigate(`/session/${result.session_id}`)}
+                        onClick={() => navigate(`/session/${result.session_id}?source=${result.source || sourceFilter}`)}
                       >
                         <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
                           <span className={cn(
@@ -231,8 +282,13 @@ export function Home() {
                               ? "bg-blue-100 text-blue-700"
                               : "bg-orange-100 text-orange-700"
                           )}>
-                            {result.message_type === 'user' ? '用户' : 'Claude'}
+                            {result.message_type === 'user' ? '用户' : (result.source === 'codex' ? 'Codex' : (result.source === 'gemini' ? 'Gemini' : 'Claude'))}
                           </span>
+                          {result.source && (
+                            <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                              {result.source}
+                            </span>
+                          )}
                           <span>{result.project_name}</span>
                           <span>·</span>
                           <span>{formatDate(result.timestamp)}</span>

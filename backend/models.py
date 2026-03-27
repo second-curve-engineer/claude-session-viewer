@@ -40,6 +40,7 @@ class SessionSummary(BaseModel):
     updated_at: datetime
     message_count: int
     tool_calls: List[str] = []  # 使用的工具列表
+    source: str = "claude"
 
 
 class SessionDetail(BaseModel):
@@ -52,6 +53,7 @@ class SessionDetail(BaseModel):
     updated_at: datetime
     messages: List[Message]
     file_changes: List[FileChange] = []
+    source: str = "claude"
 
 
 class SearchResult(BaseModel):
@@ -62,6 +64,7 @@ class SearchResult(BaseModel):
     timestamp: datetime
     matched_content: str  # 匹配的内容片段
     message_type: str  # user / assistant
+    source: str = "claude"
 
 
 class Project(BaseModel):

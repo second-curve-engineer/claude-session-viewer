@@ -36,9 +36,10 @@ export function SessionList({ sessions, loading }: SessionListProps) {
 }
 
 function SessionItem({ session }: { session: SessionSummary }) {
+  const source = session.source || 'claude';
   return (
     <Link
-      to={`/session/${session.id}`}
+      to={`/session/${session.id}?source=${source}`}
       className={cn(
         "block p-4 hover:bg-gray-50 transition-colors",
         "border-l-4 border-transparent hover:border-blue-500"

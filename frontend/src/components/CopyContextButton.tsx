@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
-import { getSessionContext } from '../lib/api';
+import { getSessionContext, type SourceFilter } from '../lib/api';
 import { cn } from '../lib/utils';
 
 interface CopyContextButtonProps {
   sessionId: string;
+  source?: SourceFilter;
 }
 
-export function CopyContextButton({ sessionId }: CopyContextButtonProps) {
+export function CopyContextButton({ sessionId, source }: CopyContextButtonProps) {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +18,7 @@ export function CopyContextButton({ sessionId }: CopyContextButtonProps) {
     setError(null);
 
     try {
-      const { context } = await getSessionContext(sessionId);
+      const { context } = await getSessionContext(sessionId, source);
       await navigator.clipboard.writeText(context);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

@@ -4,6 +4,8 @@
 
 const API_BASE = '/api';
 
+export type SourceFilter = 'claude' | 'codex' | 'gemini';
+
 export interface SessionSummary {
   id: string;
   project_path: string;
@@ -13,6 +15,7 @@ export interface SessionSummary {
   updated_at: string;
   message_count: number;
   tool_calls: string[];
+  source?: SourceFilter;
 }
 
 export interface ToolCall {
@@ -51,6 +54,7 @@ export interface SessionDetail {
   updated_at: string;
   messages: Message[];
   file_changes: FileChange[];
+  source?: SourceFilter;
 }
 
 export interface SearchResult {
@@ -60,6 +64,7 @@ export interface SearchResult {
   timestamp: string;
   matched_content: string;
   message_type: string;
+  source?: SourceFilter;
 }
 
 export interface Project {
@@ -113,9 +118,10 @@ export interface SessionContext {
 /**
  * 获取会话列表
  */
-export async function getSessions(project?: string): Promise<SessionSummary[]> {
+export async function getSessions(project?: string, source?: SourceFilter): Promise<SessionSummary[]> {
   const params = new URLSearchParams();
   if (project) params.set('project', project);
+  if (source) params.set('source', source);
 
   const url = `${API_BASE}/sessions${params.toString() ? '?' + params.toString() : ''}`;
   const response = await fetch(url);
@@ -126,8 +132,11 @@ export async function getSessions(project?: string): Promise<SessionSummary[]> {
 /**
  * 获取会话详情
  */
-export async function getSession(id: string): Promise<SessionDetail> {
-  const response = await fetch(`${API_BASE}/sessions/${id}`);
+export async function getSession(id: string, source?: SourceFilter): Promise<SessionDetail> {
+  const params = new URLSearchParams();
+  if (source) params.set('source', source);
+  const url = `${API_BASE}/sessions/${id}${params.toString() ? '?' + params.toString() : ''}`;
+  const response = await fetch(url);
   if (!response.ok) throw new Error('Failed to fetch session');
   return response.json();
 }
@@ -135,8 +144,9 @@ export async function getSession(id: string): Promise<SessionDetail> {
 /**
  * 搜索会话
  */
-export async function searchSessions(query: string): Promise<SearchResult[]> {
+export async function searchSessions(query: string, source?: SourceFilter): Promise<SearchResult[]> {
   const params = new URLSearchParams({ q: query });
+  if (source) params.set('source', source);
   const response = await fetch(`${API_BASE}/search?${params.toString()}`);
   if (!response.ok) throw new Error('Failed to search');
   return response.json();
@@ -145,8 +155,11 @@ export async function searchSessions(query: string): Promise<SearchResult[]> {
 /**
  * 获取项目列表
  */
-export async function getProjects(): Promise<Project[]> {
-  const response = await fetch(`${API_BASE}/projects`);
+export async function getProjects(source?: SourceFilter): Promise<Project[]> {
+  const params = new URLSearchParams();
+  if (source) params.set('source', source);
+  const url = `${API_BASE}/projects${params.toString() ? '?' + params.toString() : ''}`;
+  const response = await fetch(url);
   if (!response.ok) throw new Error('Failed to fetch projects');
   return response.json();
 }
@@ -154,8 +167,11 @@ export async function getProjects(): Promise<Project[]> {
 /**
  * 获取使用量摘要
  */
-export async function getUsageSummary(): Promise<UsageSummary> {
-  const response = await fetch(`${API_BASE}/usage/summary`);
+export async function getUsageSummary(source?: SourceFilter): Promise<UsageSummary> {
+  const params = new URLSearchParams();
+  if (source) params.set('source', source);
+  const url = `${API_BASE}/usage/summary${params.toString() ? '?' + params.toString() : ''}`;
+  const response = await fetch(url);
   if (!response.ok) throw new Error('Failed to fetch usage summary');
   return response.json();
 }
@@ -163,8 +179,10 @@ export async function getUsageSummary(): Promise<UsageSummary> {
 /**
  * 获取详细使用量统计
  */
-export async function getUsageDetail(days: number = 30): Promise<UsageDetail> {
-  const response = await fetch(`${API_BASE}/usage/detail?days=${days}`);
+export async function getUsageDetail(days: number = 30, source?: SourceFilter): Promise<UsageDetail> {
+  const params = new URLSearchParams({ days: String(days) });
+  if (source) params.set('source', source);
+  const response = await fetch(`${API_BASE}/usage/detail?${params.toString()}`);
   if (!response.ok) throw new Error('Failed to fetch usage detail');
   return response.json();
 }
@@ -172,8 +190,11 @@ export async function getUsageDetail(days: number = 30): Promise<UsageDetail> {
 /**
  * 获取压缩后的会话上下文，用于继续对话
  */
-export async function getSessionContext(id: string): Promise<SessionContext> {
-  const response = await fetch(`${API_BASE}/sessions/${id}/context`);
+export async function getSessionContext(id: string, source?: SourceFilter): Promise<SessionContext> {
+  const params = new URLSearchParams();
+  if (source) params.set('source', source);
+  const url = `${API_BASE}/sessions/${id}/context${params.toString() ? '?' + params.toString() : ''}`;
+  const response = await fetch(url);
   if (!response.ok) throw new Error('Failed to fetch session context');
   return response.json();
 }
