@@ -30,6 +30,9 @@ frontend/dist/
 .env.local
 .env.*.local
 
+# Local Claude settings
+.claude/
+
 # IDE
 .vscode/
 .idea/
