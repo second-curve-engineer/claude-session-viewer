@@ -5,7 +5,6 @@ import { MessageBubble } from '../components/MessageBubble';
 import { CopyContextButton } from '../components/CopyContextButton';
 import { getSession, type SessionDetail, type SourceFilter } from '../lib/api';
 import { ResumeButton } from '../components/ResumeButton';
-import { getSession, type SessionDetail } from '../lib/api';
 import { formatDateTime, cn } from '../lib/utils';
 
 export function Session() {

@@ -31,6 +31,11 @@ function normalizePlanContent(content: string): string {
     .replace(/\\t/g, '\t');
 }
 
+function getStringInput(tool: ToolCall, key: string): string | undefined {
+  const value = tool.input[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
 interface MessageBubbleProps {
   message: Message;
 }
@@ -134,6 +139,9 @@ interface ToolCallCardProps {
 function ToolCallCard({ tool }: ToolCallCardProps) {
   const [expanded, setExpanded] = useState(false);
   const hasResult = tool.result !== null && tool.result !== undefined;
+  const subagentType = getStringInput(tool, 'subagent_type');
+  const description = getStringInput(tool, 'description');
+  const status = getStringInput(tool, 'status');
 
   // 根据工具类型获取图标和颜色
   const getToolConfig = (name: string) => {
@@ -290,13 +298,13 @@ function ToolCallCard({ tool }: ToolCallCardProps) {
             <div className="bg-white">
               {/* 任务元信息 */}
               <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center gap-4 text-xs text-gray-600">
-                {tool.input.subagent_type && (
+                {subagentType && (
                   <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded">
-                    {tool.input.subagent_type as string}
+                    {subagentType}
                   </span>
                 )}
-                {tool.input.description && (
-                  <span className="font-medium">{tool.input.description as string}</span>
+                {description && (
+                  <span className="font-medium">{description}</span>
                 )}
               </div>
               {/* 任务 Prompt */}
@@ -428,8 +436,8 @@ function ToolCallCard({ tool }: ToolCallCardProps) {
                 <ListTodo className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <div className="text-sm font-medium text-gray-800">{tool.input.subject as string}</div>
-                  {tool.input.description && (
-                    <div className="text-xs text-gray-500 mt-1">{tool.input.description as string}</div>
+                  {description && (
+                    <div className="text-xs text-gray-500 mt-1">{description}</div>
                   )}
                 </div>
               </div>
@@ -440,16 +448,16 @@ function ToolCallCard({ tool }: ToolCallCardProps) {
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-gray-500">任务</span>
                 <span className="font-mono text-teal-600">#{tool.input.taskId as string}</span>
-                {tool.input.status && (
+                {status && (
                   <>
                     <span className="text-gray-400">→</span>
                     <span className={cn(
                       "px-2 py-0.5 rounded text-xs",
-                      tool.input.status === 'completed' ? "bg-green-100 text-green-700" :
-                      tool.input.status === 'in_progress' ? "bg-blue-100 text-blue-700" :
+                      status === 'completed' ? "bg-green-100 text-green-700" :
+                      status === 'in_progress' ? "bg-blue-100 text-blue-700" :
                       "bg-gray-100 text-gray-700"
                     )}>
-                      {tool.input.status as string}
+                      {status}
                     </span>
                   </>
                 )}

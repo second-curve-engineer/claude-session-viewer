@@ -1,11 +1,12 @@
 # Claude Session Viewer
 
-一个用于浏览和搜索 Claude Code 历史会话的 Web 可视化工具。
+一个用于浏览和搜索 Claude Code、Codex CLI、Gemini CLI 历史会话的 Web 可视化工具。
 
-![首页截图](docs/home.jpg)
+![首页截图](docs/home.png)
 
 ## 功能特性
 
+- **多来源会话浏览** - 支持在 Claude / Codex / Gemini 之间切换，分别查看本地历史会话
 - **时间线模式** - 跨项目按时间倒序浏览所有会话，支持日期分组导航
 - **项目筛选** - 按工作目录筛选会话
 - **全文搜索** - 搜索会话中的关键词、代码片段，结果高亮显示
@@ -18,11 +19,15 @@
   - WebFetch/WebSearch：URL 预览 + 结果展示
 - **文件变更追踪** - 查看每个会话修改了哪些文件
 - **一键复制** - Claude 回复支持一键复制
+- **Resume 辅助** - 会话列表和详情页支持一键复制 `claude --resume {session_id}` 命令
+- **上下文复制** - 会话详情页支持复制压缩后的历史上下文，用于继续对话或迁移到新会话
 - **Token 用量统计** - 类似 ccusage 的 Token 消耗统计
+  - 支持 Claude / Codex / Gemini 来源切换
   - 首页侧边栏摘要：今日、本月、总计用量及费用
   - 详情页：按日期统计、按模型统计
   - 支持手动刷新，10 分钟缓存
-  - 支持 200K 分层定价
+  - Claude 支持 200K 分层定价
+  - Codex 支持 OpenAI Codex 模型定价
 
 ## 技术栈
 
@@ -87,7 +92,11 @@ npm run dev
 claude-session-viewer/
 ├── backend/
 │   ├── main.py              # FastAPI 入口
-│   ├── parser.py            # JSONL 解析器
+│   ├── session_service.py   # Claude/Codex/Gemini 会话来源聚合
+│   ├── parser.py            # Claude Code JSONL 解析器
+│   ├── codex_parser.py      # Codex CLI JSONL 解析器
+│   ├── gemini_parser.py     # Gemini CLI 会话解析器
+│   ├── compressor.py        # 会话上下文压缩
 │   ├── models.py            # Pydantic 数据模型
 │   └── requirements.txt     # Python 依赖
 ├── frontend/
@@ -97,6 +106,8 @@ claude-session-viewer/
 │   │   │   ├── DiffViewer.tsx      # Git Diff 视图
 │   │   │   ├── CodeViewer.tsx      # 代码查看器
 │   │   │   ├── TimelineView.tsx    # 时间线视图
+│   │   │   ├── ResumeButton.tsx    # Resume 命令复制
+│   │   │   ├── CopyContextButton.tsx # 压缩上下文复制
 │   │   │   ├── UsageStats.tsx      # Token 用量统计
 │   │   │   └── ...
 │   │   ├── pages/           # 页面组件
@@ -113,7 +124,9 @@ claude-session-viewer/
 
 ## 数据来源
 
-本工具读取 Claude Code 的本地存储数据（只读，不会修改任何数据）：
+本工具读取本机 CLI 工具的本地存储数据（只读，不会修改任何数据）。
+
+### Claude Code
 
 ```
 ~/.claude/
@@ -125,9 +138,29 @@ claude-session-viewer/
         └── {hash}@v{n}
 ```
 
+### Codex CLI
+
+```
+~/.codex/
+└── sessions/           # 会话数据（JSONL 格式）
+    └── **/*.jsonl
+```
+
+### Gemini CLI
+
+```
+~/.gemini/
+└── tmp/
+    └── **/chats/session-*.json
+```
+
 ## Token 费用计算
 
-从会话文件的 `assistant` 消息中提取 `usage` 字段进行统计：
+从会话文件中提取模型和 token usage 字段进行统计，并按来源分别计算：
+
+- Claude：从 `assistant` 消息的 `usage` 字段统计 input/output/cache tokens
+- Codex：从 Codex 会话记录中的 token usage 统计 input/output/cache read，并按 Codex 模型定价估算费用
+- Gemini：从 Gemini 会话记录中提取可用 token usage 信息进行统计
 
 ```json
 {
@@ -145,14 +178,16 @@ claude-session-viewer/
 
 ### 定价表（每百万 tokens）
 
-> 数据来源: [LiteLLM Model Pricing](https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json)
+> Claude 数据来源: [LiteLLM Model Pricing](https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json)
 >
-> 更新日期: 2026-01-26
+> Codex 数据来源: [OpenAI Pricing](https://openai.com/api/pricing/)
+>
+> Gemini 数据来源: 本地会话中记录的模型与 token usage
 
 ## 截图
 
-### 时间线模式
-![会话列表](docs/home.jpg)
+### 多来源会话列表
+![会话列表](docs/home.png)
 
 ### 会话详情
 ![会话详情](docs/detail.jpg)
@@ -161,10 +196,11 @@ claude-session-viewer/
 ![搜索功能](docs/search.jpg)
 
 ### Token 用量统计
-![Token统计](docs/usage.jpg)
+![Token统计](docs/usage.png)
 
 ## 开发计划
 
 - [ ] AI 生成会话摘要
 - [ ] 导出为 Markdown
 - [ ] 会话标签管理
+- [ ] 为 Codex / Gemini 提供更精确的原生命令 Resume 支持
