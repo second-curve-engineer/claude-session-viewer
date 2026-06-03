@@ -130,10 +130,8 @@ export function Session() {
             {/* 操作按钮 */}
             <div className="flex items-center gap-2">
               <ResumeButton sessionId={id!} />
-              <CopyContextButton sessionId={id!} />
+              <CopyContextButton sessionId={id!} source={source} />
             </div>
-            {/* 复制上下文按钮 */}
-            <CopyContextButton sessionId={id!} source={source} />
           </div>
         </div>
       </header>
